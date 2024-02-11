@@ -1,5 +1,6 @@
 import Downshift from "downshift"
-import { useCallback, useState } from "react"
+import { useCallback, useState, useEffect, useRef } from "react"
+import debounce from 'lodash/debounce';
 import classNames from "classnames"
 import { DropdownPosition, GetDropdownPositionFn, InputSelectOnChange, InputSelectProps } from "./types"
 
@@ -17,6 +18,7 @@ export function InputSelect<TItem>({
     top: 0,
     left: 0,
   })
+  const inputRef = useRef(null)
 
   const onChange = useCallback<InputSelectOnChange<TItem>>(
     (selectedItem) => {
@@ -29,7 +31,34 @@ export function InputSelect<TItem>({
     },
     [consumerOnChange]
   )
+  // useEffect(() => {
+  //   const handleScroll = debounce(() => {
+  //     if (inputRef.current) {
+  //       setDropdownPosition(getDropdownPosition(inputRef.current));
+  //     }
+  //   }, 100);
 
+    
+  //   // Attach the event listener
+  //   window.addEventListener('scroll', handleScroll);
+
+  //   // Cleanup function to remove the event listener
+  //   return () => window.removeEventListener('scroll', handleScroll);
+  // }, []) 
+  useEffect(() => {
+    // Function to update position
+    const updatePosition = () => {
+      if (inputRef.current) {
+        setDropdownPosition(getDropdownPosition(inputRef.current));
+      }
+    };
+  
+    // Update immediately and then on scroll
+    updatePosition();
+    const handleScroll = debounce(updatePosition, 100);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [])
   return (
     <Downshift<TItem>
       id="KaizntreeSelect"
@@ -49,7 +78,6 @@ export function InputSelect<TItem>({
       }) => {
         const toggleProps = getToggleButtonProps()
         const parsedSelectedItem = selectedItem === null ? null : parseItem(selectedItem)
-
         return (
           <div className="KaizntreeInputSelect--root">
             <label className="KaizntreeText--s KaizntreeText--hushed" {...getLabelProps()}>
@@ -57,10 +85,13 @@ export function InputSelect<TItem>({
             </label>
             <div className="KaizntreeBreak--xs" />
             <div
+              // ref={inputRef}
               className="KaizntreeInputSelect--input"
               onClick={(event) => {
-                setDropdownPosition(getDropdownPosition(event.target))
-                toggleProps.onClick(event)
+                if (inputRef.current) {
+                  setDropdownPosition(getDropdownPosition(inputRef.current));
+                }
+                toggleProps.onClick(event);
               }}
             >
               {inputValue}
@@ -119,12 +150,20 @@ export function InputSelect<TItem>({
 
 const getDropdownPosition: GetDropdownPositionFn = (target) => {
   if (target instanceof Element) {
-    const { top, left } = target.getBoundingClientRect()
-    const { scrollY } = window
+    const rect = target.getBoundingClientRect();
+    // const { top, left } = target.getBoundingClientRect()
+    // const { scrollY } = window
+    // return {
+    //   top: scrollY + top + 63,
+    //   left,
+    // }
+    const topPosition = rect.top + rect.height + window.scrollY;
+    const leftPosition = rect.left + window.scrollX; // Left position remains the same
+
     return {
-      top: scrollY + top + 63,
-      left,
-    }
+      top: topPosition,
+      left: leftPosition,
+    };
   }
 
   return { top: 0, left: 0 }
