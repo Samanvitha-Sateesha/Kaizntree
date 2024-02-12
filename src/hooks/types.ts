@@ -19,3 +19,8 @@ export type EmployeeResult = UseTypeBaseAllResult<Employee[] | null>
 export type PaginatedTransactionsResult = UseTypeBaseAllResult<PaginatedResponse<Transaction[]> | null>
 
 export type TransactionsByEmployeeResult = UseTypeBaseByIdResult<Transaction[] | null>
+
+// Extending the base result type specifically for paginated transactions
+export type ExtendedPaginatedTransactionsResult = PaginatedTransactionsResult & {
+  hasMore: boolean;
+}

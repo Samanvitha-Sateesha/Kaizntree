@@ -13,6 +13,7 @@ export function App() {
   const { data: paginatedTransactions, ...paginatedTransactionsUtils } = usePaginatedTransactions()
   const { data: transactionsByEmployee, ...transactionsByEmployeeUtils } = useTransactionsByEmployee()
   const [isLoading, setIsLoading] = useState(false)
+  const [isFilteredByEmployee, setIsFilteredByEmployee] = useState(false);
 
   const transactions = useMemo(
     () => paginatedTransactions?.data ?? transactionsByEmployee ?? null,
@@ -62,10 +63,13 @@ export function App() {
           })}
           onChange={async (newValue) => {
             if (newValue === null) {
-              return
+              setIsFilteredByEmployee(false)
+              await loadAllTransactions() // Load all transactions if no employee is selected
             }
-
-            await loadTransactionsByEmployee(newValue.id)
+            else{
+              setIsFilteredByEmployee(true)
+              await loadTransactionsByEmployee(newValue.id)
+            }
           }}
         />
 
@@ -74,7 +78,7 @@ export function App() {
         <div className="KaizntreeGrid">
           <Transactions transactions={transactions} />
 
-          {transactions !== null && (
+          {!isFilteredByEmployee && transactions !== null && paginatedTransactionsUtils.hasMore && (
             <button
               className="KaizntreeButton"
               disabled={paginatedTransactionsUtils.loading}
